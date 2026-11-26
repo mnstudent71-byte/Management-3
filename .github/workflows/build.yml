@@ -20,30 +20,24 @@ jobs:
         distribution: 'temurin'
 
     - name: Setup Gradle
-      uses: gradle/gradle-build-action@v3
+      uses: gradle/actions/setup-gradle@v3
 
     - name: Build with Gradle
       run: |
-        echo "Looking for Android project..."
-        # اگر فایل gradlew بود از آن استفاده می‌کند، اگر نبود از گریدل سیستم استفاده می‌کند
-        if [ -f "gradlew" ]; then
-            chmod +x gradlew
-            ./gradlew assembleDebug
-        elif [ -f "Management-3/gradlew" ]; then
-            cd Management-3
-            chmod +x gradlew
-            ./gradlew assembleDebug
-        else
-            # پیدا کردن مسیر فایل settings.gradle برای اجرای دستور گریدل
-            PROJECT_DIR=$(find . -name "settings.gradle*" -exec dirname {} \; | head -n 1)
-            if [ -z "$PROJECT_DIR" ]; then
-                echo "Error: Could not find the Android project root (settings.gradle)."
-                exit 1
-            fi
-            echo "Project found in: $PROJECT_DIR"
-            cd "$PROJECT_DIR"
-            gradle assembleDebug
+        echo "Searching for the Android project root..."
+        # پیدا کردن مسیر فایلی که settings.gradle نام دارد
+        PROJECT_DIR=$(find . -name "settings.gradle*" -exec dirname {} \; | head -n 1)
+        
+        if [ -z "$PROJECT_DIR" ]; then
+          echo "Error: Could not find the Android project (settings.gradle not found)."
+          exit 1
         fi
+        
+        echo "Project found in: $PROJECT_DIR"
+        cd "$PROJECT_DIR"
+        
+        # ساخت برنامه با استفاده از Gradle
+        gradle assembleDebug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
