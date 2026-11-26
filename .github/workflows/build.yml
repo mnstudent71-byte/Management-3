@@ -19,21 +19,31 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Find and Build APK
+    - name: Setup Gradle
+      uses: gradle/gradle-build-action@v3
+
+    - name: Build with Gradle
       run: |
-        echo "Looking for gradlew..."
-        GRADLEW_PATH=$(find . -name "gradlew" -type f -print -quit)
-        if [ -z "$GRADLEW_PATH" ]; then
-          echo "Error: gradlew not found!"
-          exit 1
+        echo "Looking for Android project..."
+        # اگر فایل gradlew بود از آن استفاده می‌کند، اگر نبود از گریدل سیستم استفاده می‌کند
+        if [ -f "gradlew" ]; then
+            chmod +x gradlew
+            ./gradlew assembleDebug
+        elif [ -f "Management-3/gradlew" ]; then
+            cd Management-3
+            chmod +x gradlew
+            ./gradlew assembleDebug
+        else
+            # پیدا کردن مسیر فایل settings.gradle برای اجرای دستور گریدل
+            PROJECT_DIR=$(find . -name "settings.gradle*" -exec dirname {} \; | head -n 1)
+            if [ -z "$PROJECT_DIR" ]; then
+                echo "Error: Could not find the Android project root (settings.gradle)."
+                exit 1
+            fi
+            echo "Project found in: $PROJECT_DIR"
+            cd "$PROJECT_DIR"
+            gradle assembleDebug
         fi
-        
-        PROJECT_DIR=$(dirname "$GRADLEW_PATH")
-        echo "Project found in: $PROJECT_DIR"
-        
-        cd "$PROJECT_DIR"
-        chmod +x gradlew
-        ./gradlew assembleDebug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
